@@ -204,6 +204,7 @@ public partial class MAVLink
         new message_info(219, "GOPRO_SET_RESPONSE", 162, 2, 2, typeof( mavlink_gopro_set_response_t )),
         new message_info(225, "EFI_STATUS", 208, 65, 65, typeof( mavlink_efi_status_t )),
         new message_info(226, "RPM", 207, 8, 8, typeof( mavlink_rpm_t )),
+        new message_info(227, "SHT31_OUTPUT_STATUS", 239,  8,  8,  typeof( mavlink_sht31_t )),
         new message_info(230, "ESTIMATOR_STATUS", 163, 42, 42, typeof( mavlink_estimator_status_t )),
         new message_info(231, "WIND_COV", 105, 40, 40, typeof( mavlink_wind_cov_t )),
         new message_info(232, "GPS_INPUT", 151, 63, 65, typeof( mavlink_gps_input_t )),
@@ -475,6 +476,7 @@ public partial class MAVLink
         GOPRO_SET_RESPONSE = 219,
         EFI_STATUS = 225,
         RPM = 226,
+        SHT31_OUTPUT_STATUS = 227,
         ESTIMATOR_STATUS = 230,
         WIND_COV = 231,
         GPS_INPUT = 232,
@@ -10866,7 +10868,30 @@ public partial class MAVLink
     
     };
 
-    
+
+    /// extensions_start 0
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
+    ///<summary> Metrics typically displayed on a HUD for fixed wing aircraft. </summary>
+    public struct mavlink_sht31_t
+    {
+        public mavlink_sht31_t(float temperature, float humidity)
+        {
+
+            this.temperature = temperature;
+            this.humidity = humidity;
+        }
+
+        /// <summary>mavlink_sht31_t </summary>
+        [Units("[degC]")]
+        [Description("Current temperature in sht31 units (degC).")]
+        public float temperature;
+        /// <summary>mavlink_sht31_t </summary>
+        [Units("[%]")]
+        [Description("Current humidity in sht31 units (%).")]
+        public float humidity;
+
+    };
+
     /// extensions_start 0
     [StructLayout(LayoutKind.Sequential,Pack=1,Size=33)]
     ///<summary> Send a command with up to seven parameters to the MAV. The command microservice is documented at https://mavlink.io/en/services/command.html </summary>

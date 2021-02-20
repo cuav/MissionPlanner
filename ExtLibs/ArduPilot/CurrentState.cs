@@ -573,6 +573,17 @@ namespace MissionPlanner
         [GroupText("Sensor")]
         public float magfield3 => (float)Math.Sqrt(Math.Pow(mx3, 2) + Math.Pow(my3, 2) + Math.Pow(mz3, 2));
 
+
+        [DisplayText("Sht31temp (degC)")]
+        [GroupText("Sensor")]
+        public float sht31temp { get; set; }
+
+
+        [DisplayText("Sht31humi (%)")]
+        [GroupText("Sensor")]
+        public float sht31humi { get; set; }
+
+
         //radio
         [GroupText("RadioIn")] public float ch1in { get; set; }
 
@@ -2552,6 +2563,19 @@ namespace MissionPlanner
                             ter_load = terrainrep.loaded;
                             ter_pend = terrainrep.pending;
                             ter_space = terrainrep.spacing;
+                        }
+
+                        break;
+                    case (uint)MAVLink.MAVLINK_MSG_ID.SHT31_OUTPUT_STATUS:
+
+                        {
+                            // new message_info(376, "SHT31_OUTPUT_STATUS", 251, 140, 140, typeof( mavlink_sht31_t )),
+                            //ExtLibs/Mavlink/Mavlink.cs 中定义 mavlink_sht31_t，结构体的变量是temperature，humidity
+                            var sht31 = mavLinkMessage.ToStructure<MAVLink.mavlink_sht31_t>();
+
+                            sht31temp = sht31.temperature;
+                            sht31humi = sht31.humidity;
+
                         }
 
                         break;
