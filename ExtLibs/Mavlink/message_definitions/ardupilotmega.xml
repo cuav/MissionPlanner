@@ -1512,6 +1512,11 @@
       <field type="float" name="rpm1">RPM Sensor1.</field>
       <field type="float" name="rpm2">RPM Sensor2.</field>
     </message>
+    <message id="227" name="SHT31_OUTPUT_STATUS">
+      <description>Output sht31 temperature humidity.</description>
+      <field type="float" name="sht31_temp" units="degC">temperature</field>
+      <field type="float" name="sht31_humidity" units="%">temperature</field>
+    </message>
     <!-- ardupilot specific mavlink2 messages starting at 11000-->
     <message id="11000" name="DEVICE_OP_READ">
       <description>Read registers for a device.</description>
