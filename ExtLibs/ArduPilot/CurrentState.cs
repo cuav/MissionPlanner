@@ -573,6 +573,16 @@ namespace MissionPlanner
         [GroupText("Sensor")]
         public float magfield3 => (float)Math.Sqrt(Math.Pow(mx3, 2) + Math.Pow(my3, 2) + Math.Pow(mz3, 2));
 
+
+        [DisplayText("Sht31temp (degC)")]
+        [GroupText("Sensor")]
+        public float sht31temp { get; set; }
+
+        [DisplayText("Sht31humi (%)")]
+        [GroupText("Sensor")]
+        public float sht31humi { get; set; }
+
+
         //radio
         [GroupText("RadioIn")] public float ch1in { get; set; }
 
@@ -2695,6 +2705,18 @@ namespace MissionPlanner
 
                             groundspeed2 = gps.vel * 1.0e-2f;
                             groundcourse2 = gps.cog * 1.0e-2f;
+                        }
+
+                        break;
+                    case (uint)MAVLink.MAVLINK_MSG_ID.SHT31_OUTPUT_STATUS:
+
+                        {
+                           
+                            var sht31 = mavLinkMessage.ToStructure<MAVLink.mavlink_sht31_t>();
+
+                            sht31temp = sht31.temperature;
+                            sht31humi = sht31.humidity;
+
                         }
 
                         break;
