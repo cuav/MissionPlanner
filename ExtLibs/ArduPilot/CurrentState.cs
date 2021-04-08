@@ -354,6 +354,10 @@ namespace MissionPlanner
         [GroupText("Position")]
         public float gpshdg_acc { get; private set; }
 
+        [DisplayText("GPS Yaw (deg)")]
+        [GroupText("Position")]
+        public float gpsyaw { get; private set; }
+
         [DisplayText("Latitude2 (dd)")]
         [GroupText("Position")]
         public double lat2 { get; set; }
@@ -1732,6 +1736,34 @@ namespace MissionPlanner
         [GroupText("Generator")]
         public int gen_maint_time { get; set; }
 
+        [GroupText("EFI")]
+        [DisplayText("EFI Baro Pressure (kPa)")]
+        public float efi_baro { get; private set; }
+        [GroupText("EFI")]
+        [DisplayText("EFI Head Temp (C)")]
+        public float efi_headtemp { get; private set; }
+        [GroupText("EFI")]
+        [DisplayText("EFI Load (%)")]
+        public float efi_load { get; private set; }
+        [GroupText("EFI")]
+        [DisplayText("EFI Health")]
+        public byte efi_health { get; private set; }
+        [GroupText("EFI")]
+        [DisplayText("EFI Exhast Temp (C)")]
+        public float efi_exhasttemp { get; private set; }
+        [GroupText("EFI")]
+        [DisplayText("EFI Intake Temp (C)")]
+        public float efi_intaketemp { get; private set; }
+        [GroupText("EFI")]
+        [DisplayText("EFI rpm")]
+        public float efi_rpm { get; private set; }
+        [GroupText("EFI")]
+        [DisplayText("EFI Fuel Flow (g/min)")]
+        public float efi_fuelflow { get; private set; }
+        [GroupText("EFI")]
+        [DisplayText("EFI Fuel Consumed (g)")]
+        public float efi_fuelconsumed { get; private set; }
+
         public object Clone()
         {
             return MemberwiseClone();
@@ -2215,6 +2247,25 @@ namespace MissionPlanner
                         }
 
                         break;
+                    case (uint)MAVLink.MAVLINK_MSG_ID.EFI_STATUS:
+
+                        {
+                            var efi = mavLinkMessage.ToStructure<MAVLink.mavlink_efi_status_t>();
+
+                            if (efi.ecu_index == 0)
+                            {
+                                efi_baro = efi.barometric_pressure;
+                                efi_headtemp = efi.cylinder_head_temperature;
+                                efi_load = efi.engine_load;
+                                efi_health = efi.health;
+                                efi_exhasttemp = efi.exhaust_gas_temperature;
+                                efi_intaketemp = efi.intake_manifold_temperature;
+                                efi_rpm = efi.rpm;
+                                efi_fuelflow = efi.fuel_flow;
+                                efi_fuelconsumed = efi.fuel_consumed;
+                            }
+                        }
+                        break;
                     case (uint)MAVLink.MAVLINK_MSG_ID.POWER_STATUS:
 
                         {
@@ -2275,8 +2326,9 @@ namespace MissionPlanner
                                 if(armed == false && newarmed == true)
                                 {
                                     timeSinceArmInAir = 0;
-                                    armed = newarmed;
                                 }
+
+                                armed = newarmed;
 
                                 // saftey switch
                                 if (armed && sensors_enabled.motor_control == false && sensors_enabled.seen)
@@ -2676,6 +2728,7 @@ namespace MissionPlanner
                                 gpsv_acc = gps.v_acc / 1000.0f;
                                 gpsvel_acc = gps.vel_acc / 1000.0f;
                                 gpshdg_acc = gps.hdg_acc / 1e5f;
+                                gpsyaw = gps.yaw / 100.0f;
                             }
                             else
                             {
@@ -2683,6 +2736,7 @@ namespace MissionPlanner
                                 gpsv_acc = -1;
                                 gpsvel_acc = -1;
                                 gpshdg_acc = -1;
+                                gpsyaw = -1;
                             }
 
                             //MAVLink.packets[(byte)MAVLink.MSG_NAMES.GPS_RAW);
