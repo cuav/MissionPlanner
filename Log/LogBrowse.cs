@@ -195,6 +195,8 @@ namespace MissionPlanner.Log
             if (GCSViews.FlightData.mymap != null)
                 myGMAP1.MapProvider = GCSViews.FlightData.mymap.MapProvider;
 
+            myGMAP1.MaxZoom = 24;
+
             myGMAP1.Overlays.Add(mapoverlay);
             myGMAP1.Overlays.Add(markeroverlay);
 
@@ -3402,7 +3404,8 @@ main()
             MainV2.comPort.MAV.param.Clear();
             MainV2.comPort.MAV.param.AddRange(parmdata);
 
-            new ConfigRawParamsTree().ShowUserControl();
+            myGMAP1.DisableFocusOnMouseEnter = true;
+            var frm = new ConfigRawParamsTree().ShowUserControl();
         }
     }
 }

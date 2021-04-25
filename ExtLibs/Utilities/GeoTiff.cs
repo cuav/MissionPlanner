@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 using GMap.NET;
 using log4net;
 using Microsoft.Extensions.Caching.Memory;
+using ProjNet.CoordinateSystems;
+using ProjNet.CoordinateSystems.Transformations;
+using GeoAPI.CoordinateSystems;
 
 namespace MissionPlanner.Utilities
 {
@@ -156,6 +159,13 @@ namespace MissionPlanner.Utilities
                                 log.InfoFormat("GeoKeyDirectoryTag ID={0} Value={1}", (GKID) KeyID, value);
                                 */
                             }
+
+                            if (KeyID == (int)GKID.PCSCitationGeoKey)
+                            {
+                                var value = tiff.GetField((TiffTag) TIFFTagLocation)[1].ToByteArray().Skip(Value_Offset)
+                                    .Take(Count);
+                                PCSCitationGeoKey = Encoding.ASCII.GetString(value.ToArray());
+                            }
                         }
                     }
 
@@ -177,6 +187,13 @@ namespace MissionPlanner.Utilities
                     zscale = BitConverter.ToDouble(modelscale[1].ToByteArray(), 0 + 16);
 
                     log.InfoFormat("Scale ({0},{1},{2})", xscale, yscale, zscale);
+
+                    if (!String.IsNullOrEmpty(PCSCitationGeoKey))
+                    {
+                        //var source = new CoordinateSystemFactory();
+                        //var coords = source.CreateFromWkt(PCSCitationGeoKey);
+                        //var converter = new CoordinateTransformationFactory().CreateFromCoordinateSystems(coords,GeocentricCoordinateSystem.WGS84);
+                    }
 
                     // wgs84 utm
                     if (ProjectedCSTypeGeoKey >= 32601 && ProjectedCSTypeGeoKey <= 32760)
@@ -244,9 +261,41 @@ namespace MissionPlanner.Utilities
                         xmax = Math.Max(Math.Max(Math.Max(pnt.Lng, pnt2.Lng), pnt3.Lng), pnt4.Lng);
                     }
 
-                    
-
                     Area = new RectLatLng(ymax, xmin, xmax - xmin, ymax - ymin);
+
+                    /// gda94
+                    if (ProjectedCSTypeGeoKey >= 28348 && ProjectedCSTypeGeoKey <= 28358)
+                    {
+                        UTMZone = (ProjectedCSTypeGeoKey - 28300) * -1;
+                        var pnt = PointLatLngAlt.FromUTM(UTMZone, x, y);
+                        var pnt2 = PointLatLngAlt.FromUTM(UTMZone, x + width * xscale,
+                            y - height * yscale);
+                        var pnt3 = PointLatLngAlt.FromUTM(UTMZone, x + width * xscale, y);
+                        var pnt4 = PointLatLngAlt.FromUTM(UTMZone, x, y - height * yscale);
+
+                        ymin = Math.Min(Math.Min(Math.Min(pnt.Lat, pnt2.Lat), pnt3.Lat), pnt4.Lat);
+                        xmin = Math.Min(Math.Min(Math.Min(pnt.Lng, pnt2.Lng), pnt3.Lng), pnt4.Lng);
+                        ymax = Math.Max(Math.Max(Math.Max(pnt.Lat, pnt2.Lat), pnt3.Lat), pnt4.Lat);
+                        xmax = Math.Max(Math.Max(Math.Max(pnt.Lng, pnt2.Lng), pnt3.Lng), pnt4.Lng);
+
+                        Area = new RectLatLng(ymax, xmin, xmax - xmin, ymax - ymin);
+                    }
+
+                    // geo lat/lng
+                    if (ProjectedCSTypeGeoKey == 0 || ProjectedCSTypeGeoKey == 4326)
+                    {
+                        var pnt = new PointLatLngAlt(y, x);
+                        var pnt2 = new PointLatLngAlt(y + height * yscale, x + width * xscale);
+                        var pnt3 = new PointLatLngAlt(y, x + width * xscale);
+                        var pnt4 = new PointLatLngAlt(y + height * yscale, x);
+
+                        ymin = Math.Min(Math.Min(Math.Min(pnt.Lat, pnt2.Lat), pnt3.Lat), pnt4.Lat);
+                        xmin = Math.Min(Math.Min(Math.Min(pnt.Lng, pnt2.Lng), pnt3.Lng), pnt4.Lng);
+                        ymax = Math.Max(Math.Max(Math.Max(pnt.Lat, pnt2.Lat), pnt3.Lat), pnt4.Lat);
+                        xmax = Math.Max(Math.Max(Math.Max(pnt.Lng, pnt2.Lng), pnt3.Lng), pnt4.Lng);
+
+                        Area = new RectLatLng(y, x, width*xscale, height*yscale);
+                    }
 
                     log.InfoFormat("Coverage {0}", Area.ToString());
 
@@ -318,6 +367,8 @@ namespace MissionPlanner.Utilities
             /// 0= unknown, 1 = PixelIsArea, 2 = PixelIsPoint, 32767 = user def
             /// </summary>
             public ushort GTRasterTypeGeoKey;
+
+            public string PCSCitationGeoKey;
         }
 
         static GeoTiff()
@@ -366,7 +417,8 @@ namespace MissionPlanner.Utilities
                     //wgs84 && etrs89
                     if (geotiffdata.ProjectedCSTypeGeoKey >= 3038 && geotiffdata.ProjectedCSTypeGeoKey <= 3051 ||
                         geotiffdata.ProjectedCSTypeGeoKey >= 32601 && geotiffdata.ProjectedCSTypeGeoKey <= 32760 ||
-                        geotiffdata.ProjectedCSTypeGeoKey >= 25828 && geotiffdata.ProjectedCSTypeGeoKey <= 25838)
+                        geotiffdata.ProjectedCSTypeGeoKey >= 25828 && geotiffdata.ProjectedCSTypeGeoKey <= 25838 ||
+                        geotiffdata.ProjectedCSTypeGeoKey >= 28348 && geotiffdata.ProjectedCSTypeGeoKey <= 28358)
                     {
                         var pnt = PointLatLngAlt.ToUTM((geotiffdata.UTMZone) * 1, lat, lng);
 
@@ -410,7 +462,10 @@ namespace MissionPlanner.Utilities
         }
 
         private static MemoryCache cachescanlines =
-            new MemoryCache(new MemoryCacheOptions() {SizeLimit = 1024 * 1024 * 500});
+            new MemoryCache(new MemoryCacheOptions()
+            {
+                /*SizeLimit = 1024 * 1024 * 500*/
+            });
 
         private static double GetAltNoCache(geotiffdata geotiffdata, int x, int y)
         {
@@ -419,7 +474,7 @@ namespace MissionPlanner.Utilities
                 scanline = cachescanlines.Get(geotiffdata.FileName + x.ToString()) as byte[];
             if (scanline == null)
             {
-                Task.Run(() =>
+                //Task.Run(() =>
                 {
                     lock(geotiffdata)
                         if (geotiffdata.Tiff == null)
@@ -452,8 +507,11 @@ namespace MissionPlanner.Utilities
                         }
                     }
                 }
-                );
-                return short.MinValue;
+                //);
+                //return short.MinValue;
+
+                if (scanline == null)
+                    return short.MinValue;
             }
 
             return ProcessScanLine(geotiffdata, y, scanline);
@@ -463,6 +521,9 @@ namespace MissionPlanner.Utilities
         {
             lock (cachescanlines)
             {
+                if(cachescanlines.Get(geotiffdata.FileName + x.ToString())!= null)
+                    return;
+
                 var ci = cachescanlines.CreateEntry(geotiffdata.FileName + x.ToString());
                 ci.Value = scanline;
                 ci.Size = ((byte[]) ci.Value).Length;
@@ -543,6 +604,8 @@ namespace MissionPlanner.Utilities
             }
             else if (geotiffdata.bits == 32 && geotiffdata.type == 3)
             {
+                if (y * 4 > scanline.Length)
+                    return short.MinValue;
                 return BitConverter.ToSingle(scanline, y * 4);
             }
 
