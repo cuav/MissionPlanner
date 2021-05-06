@@ -578,13 +578,14 @@ namespace MissionPlanner
         public float magfield3 => (float)Math.Sqrt(Math.Pow(mx3, 2) + Math.Pow(my3, 2) + Math.Pow(mz3, 2));
 
 
-        [DisplayText("Sht31temp (degC)")]
+        [DisplayText("atmostemp (degC)")]
         [GroupText("Sensor")]
-        public float sht31temp { get; set; }
+        public float atmostemp { get; set; }
 
-        [DisplayText("Sht31humi (%)")]
+
+        [DisplayText("atmoshumi (%)")]
         [GroupText("Sensor")]
-        public float sht31humi { get; set; }
+        public float atmoshumi { get; set; }
 
 
         //radio
@@ -2762,14 +2763,14 @@ namespace MissionPlanner
                         }
 
                         break;
-                    case (uint)MAVLink.MAVLINK_MSG_ID.SHT31_OUTPUT_STATUS:
+                    case (uint)MAVLink.MAVLINK_MSG_ID.ATMOSPHERE_OUTPUT_STATUS:
 
                         {
-                           
-                            var sht31 = mavLinkMessage.ToStructure<MAVLink.mavlink_sht31_t>();
 
-                            sht31temp = sht31.temperature;
-                            sht31humi = sht31.humidity;
+                            var atmos = mavLinkMessage.ToStructure<MAVLink.mavlink_atmos_t>();
+
+                            atmostemp = atmos.temperature;
+                            atmoshumi = atmos.humidity;
 
                         }
 
